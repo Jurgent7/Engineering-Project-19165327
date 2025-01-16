@@ -1,39 +1,33 @@
-#include <Servo.h>
-#include <Wire.h>
-#include <math.h>
+#include <Servo.h> // Import servo motor library
+#include <Wire.h>  // I2C bus library, allows data transfer with Nano
+#include <math.h>  // Math library
 
-// Servo Motor Pin
-#define SERVO_PIN 10
+#define ServoMotor_pin 10  // Servo motor pin 10
 Servo steeringServo;
 
-// Waypoints
-#define NUM_WAYPOINTS 84
-float waypoints[NUM_WAYPOINTS][2] = {
-  {21.06, 14.08}, {23.12, 16.90}, {25.01, 19.84}, {25.40, 23.17},
-  {23.98, 26.45}, {21.02, 27.99}, {18.09, 26.74}, {15.37, 28.68},
-  {13.01, 31.24}, {10.82, 34.01}, {8.90, 36.93}, {7.16, 39.90},
-  {4.62, 42.15}, {1.41, 42.46}, {-1.43, 40.57}, {-3.46, 37.70},
-  {-5.21, 34.67}, {-6.80, 31.55}, {-8.37, 28.42}, {-9.96, 25.30},
-  {-11.53, 22.17}, {-13.05, 19.02}, {-14.56, 15.87}, {-16.03, 12.69},
-  {-17.63, 9.58}, {-19.77, 6.83}, {-22.46, 4.72}, {-24.73, 2.21},
-  {-24.81, -1.03}, {-23.12, -4.06}, {-22.84, -7.33}, {-23.80, -10.67},
-  {-23.58, -13.98}, {-22.42, -17.29}, {-21.46, -20.59}, {-21.03, -24.07},
-  {-20.80, -27.55}, {-20.46, -31.03}, {-19.96, -34.51}, {-18.98, -37.88},
-  {-17.37, -40.96}, {-14.80, -42.93}, {-11.33, -43.38}, {-7.83, -43.09},
-  {-4.36, -42.68}, {-0.88, -42.25}, {2.60, -41.87}, {6.03, -41.17},
-  {9.22, -39.89}, {12.10, -38.04}, {14.52, -35.54}, {16.28, -32.48},
-  {17.76, -29.31}, {17.18, -26.13}, {14.27, -25.51}, {12.69, -28.22},
-  {11.95, -31.52}, {8.97, -32.50}, {5.95, -31.11}, {3.17, -28.99},
-  {0.55, -26.66}, {-2.06, -24.32}, {-4.69, -22.01}, {-7.34, -19.73},
-  {-10.02, -17.48}, {-12.75, -15.29}, {-15.40, -13.02}, {-17.35, -10.22},
-  {-17.76, -6.80}, {-16.78, -3.40}, {-14.49, -1.80}, {-13.06, -4.87},
-  {-11.25, -7.39}, {-8.18, -5.99}, {-5.70, -3.51}, {-2.91, -1.39},
-  {0.24, -0.23}, {3.65, -0.04}, {7.13, -0.23}, {10.31, 0.48},
-  {12.89, 2.83}, {14.95, 5.65}, {16.96, 8.52}, {19.01, 11.35},
+#define No_Waypoints 84 // Define all 84 waypoints
+float waypoints[No_Waypoints][2] = {
+  {8.42, 5.63}, {9.25, 6.76}, {10.00, 7.93}, {10.16, 9.27}, {9.59, 10.58},  
+  {8.41, 11.20}, {7.23, 10.70}, {6.15, 11.47}, {5.20, 12.50}, {4.33, 13.60},  
+  {3.56, 14.77}, {2.86, 15.96}, {1.85, 16.86}, {0.56, 16.99}, {-0.57, 16.23},  
+  {-1.38, 15.08}, {-2.08, 13.87}, {-2.72, 12.62}, {-3.35, 11.37}, {-3.98, 10.12},  
+  {-4.61, 8.87}, {-5.22, 7.61}, {-5.83, 6.35}, {-6.41, 5.08}, {-7.05, 3.83},  
+  {-7.91, 2.73}, {-8.98, 1.89}, {-9.89, 0.88}, {-9.92, -0.41}, {-9.25, -1.63},  
+  {-9.14, -2.93}, {-9.52, -4.27}, {-9.43, -5.59}, {-8.97, -6.92}, {-8.58, -8.24},  
+  {-8.41, -9.63}, {-8.32, -11.02}, {-8.18, -12.41}, {-7.99, -13.80}, {-7.59, -15.15},  
+  {-6.95, -16.38}, {-5.92, -17.17}, {-4.53, -17.35}, {-3.13, -17.24}, {-1.74, -17.07},  
+  {-0.35, -16.90}, {1.04, -16.75}, {2.41, -16.47}, {3.69, -15.96}, {4.84, -15.22},  
+  {5.81, -14.21}, {6.51, -12.99}, {7.10, -11.72}, {6.87, -10.45}, {5.71, -10.21},  
+  {5.08, -11.29}, {4.78, -12.61}, {3.59, -13.00}, {2.38, -12.44}, {1.27, -11.60},  
+  {0.22, -10.66}, {-0.82, -9.73}, {-1.88, -8.81}, {-2.93, -7.89}, {-4.01, -6.99},  
+  {-5.10, -6.12}, {-6.16, -5.21}, {-6.94, -4.09}, {-7.11, -2.72}, {-6.71, -1.36},  
+  {-5.80, -0.72}, {-5.23, -1.95}, {-4.50, -2.96}, {-3.27, -2.39}, {-2.28, -1.40},  
+  {-1.16, -0.56}, {0.10, -0.09}, {1.46, -0.01}, {2.85, -0.09}, {4.12, 0.19},  
+  {5.15, 1.13}, {5.98, 2.26}, {6.78, 3.41}, {7.61, 4.54}
 };
 
 // Current position and heading
-float x_pos = 0, y_pos = 0;
+float x_pos = 8.42, y_pos = 5.63;
 float theta = 0;  // Heading in radians
 
 // Current waypoint index
@@ -43,10 +37,10 @@ int currentWaypointIndex = 0;
 volatile int encoderTicks = 0;
 
 // Constants
-#define WHEEL_DIAMETER 10.0 // cm
-#define WHEEL_CIRCUMFERENCE (3.14 * WHEEL_DIAMETER) // cm
-#define TICKS_PER_ROTATION 20 // Number of encoder ticks per full rotation
-#define WAYPOINT_THRESHOLD 1.0 // Threshold distance to waypoint in meters
+#define Wheel_diameter 10.0 // cm
+#define wheel_circumference (3.14 * Wheel_diameter) // cm
+#define ticks_rotation 20 // Number of encoder ticks per full rotation
+#define waypoint_threshold 1.0 // Threshold distance to waypoint in meters
 
 // Timer for non-blocking delays
 unsigned long previousMillis = 0;
@@ -57,9 +51,8 @@ void setup() {
   Serial.begin(9600);
 
   // Initialize Servo
-  steeringServo.attach(SERVO_PIN);
+  steeringServo.attach(ServoMotor_pin);
   steeringServo.write(90); // Center the steering
-
   Serial.println("Mega initialized and ready.");
 }
 
@@ -75,18 +68,23 @@ void loop() {
   }
 }
 
-// ----------------- Navigation -----------------
+// navigation -----------------
 void navigateToClosestWaypoint() {
-  // Look for the next 5 waypoints and choose the closest one
-  int closestWaypointIndex = -1;
-  float closestDistance = INFINITY; // Start with a very large number
+  // Define the search range for the next 5 waypoints
+  int searchRangeStart = currentWaypointIndex;
+  int searchRangeEnd = min(currentWaypointIndex + 5, No_Waypoints); // Make sure array size does not exceed 5, 
+  // Only next 5 waypoints will be considered.
 
-  // Find the closest waypoint
-  for (int i = currentWaypointIndex; i < NUM_WAYPOINTS; i++) {
+  int closestWaypointIndex = -1;
+  float closestDistance = 1000; // Start with a very large number to compare the distance
+  //The program will compare first waypoint distance value to this number and then to the next waypioint distance 
+
+  // Find the closest waypoint within the next 5
+  for (int i = searchRangeStart; i < searchRangeEnd; i++) {
     float targetX = waypoints[i][0];
     float targetY = waypoints[i][1];
 
-    // Compute distance to this waypoint
+    // Compute distance to this waypoint using Equation 1 
     float distanceToTarget = sqrt(pow(targetX - x_pos, 2) + pow(targetY - y_pos, 2));
 
     // Check if this is the closest waypoint so far
@@ -102,33 +100,19 @@ void navigateToClosestWaypoint() {
     float targetX = waypoints[currentWaypointIndex][0];
     float targetY = waypoints[currentWaypointIndex][1];
 
-    // Compute distance to target
+    // Compute distance and angle to target, using Equations 1 and 2 from report
     float distanceToTarget = sqrt(pow(targetX - x_pos, 2) + pow(targetY - y_pos, 2));
-
-    // If the waypoint is reached, print a message and move to the next one
-    if (distanceToTarget < WAYPOINT_THRESHOLD) {
-      Serial.print("Waypoint ");
-      Serial.print(currentWaypointIndex + 1);
-      Serial.println(" reached!");
-
-      // Debug: Print the next closest waypoint
-      if (currentWaypointIndex < NUM_WAYPOINTS - 1) {
-        Serial.print("Moving to next closest waypoint: ");
-        Serial.print(currentWaypointIndex + 2);
-        Serial.print(" at coordinates: ");
-        Serial.print(waypoints[currentWaypointIndex + 1][0], 2);
-        Serial.print(", ");
-        Serial.println(waypoints[currentWaypointIndex + 1][1], 2);
-      } else {
-        Serial.println("All waypoints reached!");
-        return; // All waypoints are completed
-      }
-    }
-
-    // Compute angle and steering towards the closest waypoint
     float angleToTarget = atan2(targetY - y_pos, targetX - x_pos);
     float angleDiff = angleToTarget - theta;
     angleDiff = normalizeAngle(angleDiff);
+
+    // If the waypoint is reached, print a message and update
+    if (distanceToTarget < waypoint_threshold) {
+      Serial.print("Waypoint ");
+      Serial.print(currentWaypointIndex + 1);
+      Serial.println(" reached!");
+      return; // Exit function to wait for next update
+    }
 
     // Map angle difference to the servo's range (60° to 120°)
     int steeringAngle = 90 + (angleDiff * 30); // Adjust the factor as needed
@@ -148,18 +132,20 @@ void navigateToClosestWaypoint() {
     Serial.print(targetX, 2);
     Serial.print(", ");
     Serial.print(targetY, 2);
-    Serial.print(" | Distance: ");
+    Serial.print(" / Distance: ");
     Serial.print(distanceToTarget, 2);
-    Serial.print(" | Angle to Target: ");
+    Serial.print(" / Angle to Target: ");
     Serial.print(angleToTarget, 2);
-    Serial.print(" | Steering Angle: ");
+    Serial.print(" / Steering Angle: ");
     Serial.print(steeringAngle);
-    Serial.print(" | Motor Speed: ");
+    Serial.print(" / Motor Speed: ");
     Serial.println(motorSpeed);
+  } else {
+    Serial.println("No waypoint found in the range!");
   }
 }
 
-// ----------------- Encoder Data -----------------
+// Encoder Data -----------------
 void updatePositionFromEncoders() {
   Wire.requestFrom(8, 2); // Request 2 bytes (1 integer: ticks)
   if (Wire.available() >= 2) {
@@ -171,14 +157,14 @@ void updatePositionFromEncoders() {
   }
 
   // Compute distance traveled
-  float distance = (encoderTicks / (float)TICKS_PER_ROTATION) * WHEEL_CIRCUMFERENCE / 100.0;
+  float distance = (encoderTicks / (float)ticks_rotation) * wheel_circumference / 100.0;
 
   // Update position based on distance and heading
   x_pos += distance * cos(theta);
   y_pos += distance * sin(theta);
 
   // Update the heading (theta) based on encoder ticks (adjust depending on your system)
-  float angleTurned = (encoderTicks / (float)TICKS_PER_ROTATION) * 2 * PI; // Based on the number of encoder ticks
+  float angleTurned = (encoderTicks / (float)ticks_rotation) * 2 * PI; // Based on the number of encoder ticks
   theta += angleTurned;
   theta = normalizeAngle(theta); // Normalize angle to range -PI to PI
 
@@ -187,12 +173,12 @@ void updatePositionFromEncoders() {
   Serial.print(x_pos, 2);
   Serial.print(", Y: ");
   Serial.print(y_pos, 2);
-  Serial.print(" | Heading: ");
+  Serial.print(" - Heading: ");
   Serial.println(theta, 2);
 }
 
-// ----------------- Helper Functions -----------------
-float normalizeAngle(float angle) {
+// Keeping steering under managable values
+float normalizeAngle(float angle) {  // make sure the angle does not exceed -pi and + pi 
   while (angle > PI) angle -= 2 * PI;
   while (angle < -PI) angle += 2 * PI;
   return angle;
@@ -200,6 +186,6 @@ float normalizeAngle(float angle) {
 
 void sendMotorSpeedToNano(int speed) {
   Wire.beginTransmission(8);  // Address of the Nano
-  Wire.write(speed);          // Send motor speed
-  Wire.endTransmission();
+  Wire.write(speed);          // Send dc motor  speed 
+  Wire.endTransmission();   //close transmission
 }
