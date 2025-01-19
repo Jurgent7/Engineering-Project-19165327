@@ -1,11 +1,16 @@
-#include <Servo.h> // Import servo motor library
-#include <Wire.h>  // I2C bus library, allows data transfer with Nano
-#include <math.h>  // Math library
+//19165327 Jutgent Gjeloshaj 2025
+#include <Servo.h>  // Import servo motor library
+#include <Wire.h>   // I2C bus library, allows data transfer with Nano
+#include <math.h>   // Math library allows math operations
+#include <SPI.h>  // SPI communication library 
+#include <SD.h> // SD card set up  Library
 
-#define ServoMotor_pin 10  // Servo motor pin 10
-Servo steeringServo;
+int chipSelect = 4;   //set up chipselect 4
+File WaypointData; //variable for working with file object
+#define ServoMotor_pin 8  // Servo motor pin 10
+Servo steeringServo; // set up variable steering Servo 
 
-#define No_Waypoints 84 // Define all 84 waypoints
+#define No_Waypoints 84  // Define all 84 waypoints
 float waypoints[No_Waypoints][2] = {
   {8.42, 5.63}, {9.25, 6.76}, {10.00, 7.93}, {10.16, 9.27}, {9.59, 10.58},  
   {8.41, 11.20}, {7.23, 10.70}, {6.15, 11.47}, {5.20, 12.50}, {4.33, 13.60},  
@@ -24,23 +29,21 @@ float waypoints[No_Waypoints][2] = {
   {-5.80, -0.72}, {-5.23, -1.95}, {-4.50, -2.96}, {-3.27, -2.39}, {-2.28, -1.40},  
   {-1.16, -0.56}, {0.10, -0.09}, {1.46, -0.01}, {2.85, -0.09}, {4.12, 0.19},  
   {5.15, 1.13}, {5.98, 2.26}, {6.78, 3.41}, {7.61, 4.54}
-};
 
+};
 // Current position and heading
 float x_pos = 8.42, y_pos = 5.63;
 float theta = 0;  // Heading in radians
-
 // Current waypoint index
 int currentWaypointIndex = 0;
-
 // Wheel encoder ticks received from Nano
 volatile int encoderTicks = 0;
 
 // Constants
-#define Wheel_diameter 10.0 // cm
-#define wheel_circumference (3.14 * Wheel_diameter) // cm
-#define ticks_rotation 20 // Number of encoder ticks per full rotation
-#define waypoint_threshold 1.0 // Threshold distance to waypoint in meters
+#define Wheel_diameter 10.0                          // car's wheel diameter in cm
+#define wheel_circumference (3.14 * Wheel_diameter)  // car's wheel circumference in cm 
+#define ticks_rotation 20                            // Number of encoder ticks per full rotation
+#define waypoint_threshold 1.0                       // Threshold distance to waypoint in meters
 
 // Timer for non-blocking delays
 unsigned long previousMillis = 0;
@@ -48,43 +51,38 @@ const long interval = 100;  // Update interval (100ms)
 
 void setup() {
   Wire.begin();
-  Serial.begin(9600);
+  Serial.begin(9600); //serial monitor 
+  
+  pinMode(10, OUTPUT);
+  SD.begin(chipSelect);
+  while (!Serial) {
+    delay(10);
+  }
 
   // Initialize Servo
   steeringServo.attach(ServoMotor_pin);
-  steeringServo.write(90); // Center the steering
+  steeringServo.write(90);  // Center the steering
   Serial.println("Mega initialized and ready.");
-}
-
-void loop() {
-  // Only update at regular intervals (non-blocking)
-  unsigned long currentMillis = millis();
-  if (currentMillis - previousMillis >= interval) {
-    previousMillis = currentMillis;
-
-    // Update position from encoders and navigate to waypoint
-    updatePositionFromEncoders();
-    navigateToClosestWaypoint();
-  }
 }
 
 // navigation -----------------
 void navigateToClosestWaypoint() {
   // Define the search range for the next 5 waypoints
   int searchRangeStart = currentWaypointIndex;
-  int searchRangeEnd = min(currentWaypointIndex + 5, No_Waypoints); // Make sure array size does not exceed 5, 
+  int searchRangeEnd = min(currentWaypointIndex + 5, No_Waypoints);  // Make sure array size does not exceed 5,
   // Only next 5 waypoints will be considered.
+  Serial.print(currentWaypointIndex);
 
   int closestWaypointIndex = -1;
-  float closestDistance = 1000; // Start with a very large number to compare the distance
-  //The program will compare first waypoint distance value to this number and then to the next waypioint distance 
+  float closestDistance = 1000;  // Start with a very large number to compare the distance
+  //The program will compare first waypoint distance value to this number and then to the next waypioint distance
 
   // Find the closest waypoint within the next 5
   for (int i = searchRangeStart; i < searchRangeEnd; i++) {
     float targetX = waypoints[i][0];
     float targetY = waypoints[i][1];
 
-    // Compute distance to this waypoint using Equation 1 
+    // Compute distance to this waypoint using Equation 1
     float distanceToTarget = sqrt(pow(targetX - x_pos, 2) + pow(targetY - y_pos, 2));
 
     // Check if this is the closest waypoint so far
@@ -96,7 +94,7 @@ void navigateToClosestWaypoint() {
 
   // If a closest waypoint is found, move towards it
   if (closestWaypointIndex != -1) {
-    currentWaypointIndex = closestWaypointIndex; // Set this waypoint as the target
+    currentWaypointIndex = closestWaypointIndex;  // Set this waypoint as the target
     float targetX = waypoints[currentWaypointIndex][0];
     float targetY = waypoints[currentWaypointIndex][1];
 
@@ -111,23 +109,21 @@ void navigateToClosestWaypoint() {
       Serial.print("Waypoint ");
       Serial.print(currentWaypointIndex + 1);
       Serial.println(" reached!");
-      return; // Exit function to wait for next update
+      return;  // Exit function to wait for next update
     }
 
     // Map angle difference to the servo's range (60° to 120°)
-    int steeringAngle = 90 + (angleDiff * 30); // Adjust the factor as needed
+    int steeringAngle = 90 + (angleDiff * 30);  // Adjust the factor as needed
     steeringAngle = constrain(steeringAngle, 60, 120);
 
     // Dynamically adjust motor speed based on distance to target
-    int motorSpeed = map(distanceToTarget, 0, 50, 50, 255); // Example, adjust max speed (255) and min speed (50)
-
+    int motorSpeed = map(distanceToTarget, 0, 50, 50, 255);  // max speed (255) and min speed (50)
     // Control Servo for Steering
     steeringServo.write(steeringAngle);
-
     // Send motor speed to Nano
     sendMotorSpeedToNano(motorSpeed);
 
-    // Debug output
+    // Display target waypoint, distamce, angle and other features on serial monitor
     Serial.print("Target Waypoint: ");
     Serial.print(targetX, 2);
     Serial.print(", ");
@@ -147,7 +143,7 @@ void navigateToClosestWaypoint() {
 
 // Encoder Data -----------------
 void updatePositionFromEncoders() {
-  Wire.requestFrom(8, 2); // Request 2 bytes (1 integer: ticks)
+  Wire.requestFrom(8, 2);  // Request 2 bytes (1 integer: ticks)
   if (Wire.available() >= 2) {
     encoderTicks = Wire.read() | (Wire.read() << 8);
   } else {
@@ -164,9 +160,9 @@ void updatePositionFromEncoders() {
   y_pos += distance * sin(theta);
 
   // Update the heading (theta) based on encoder ticks (adjust depending on your system)
-  float angleTurned = (encoderTicks / (float)ticks_rotation) * 2 * PI; // Based on the number of encoder ticks
+  float angleTurned = (encoderTicks / (float)ticks_rotation) * 2 * PI;  // Based on the number of encoder ticks
   theta += angleTurned;
-  theta = normalizeAngle(theta); // Normalize angle to range -PI to PI
+  theta = normalizeAngle(theta);  // Normalize angle to range -PI to PI
 
   // Debug output
   Serial.print("Position Updated -> X: ");
@@ -178,7 +174,7 @@ void updatePositionFromEncoders() {
 }
 
 // Keeping steering under managable values
-float normalizeAngle(float angle) {  // make sure the angle does not exceed -pi and + pi 
+float normalizeAngle(float angle) {  // make sure the angle does not exceed -pi and + pi
   while (angle > PI) angle -= 2 * PI;
   while (angle < -PI) angle += 2 * PI;
   return angle;
@@ -186,6 +182,36 @@ float normalizeAngle(float angle) {  // make sure the angle does not exceed -pi 
 
 void sendMotorSpeedToNano(int speed) {
   Wire.beginTransmission(8);  // Address of the Nano
-  Wire.write(speed);          // Send dc motor  speed 
-  Wire.endTransmission();   //close transmission
+  Wire.write(speed);          // Send dc motor  speed
+  Wire.endTransmission();     //close transmission
+}
+void loop() {
+
+  WaypointData = SD.open("Car.txt", FILE_WRITE);  //open data and write data in it
+  // Only update at regular intervals (non-blocking)
+
+  if (WaypointData) {
+    WaypointData.print("Target Waypoint: ");
+    WaypointData.print(x_pos, 2);
+    WaypointData.print(", ");
+    WaypointData.print(y_pos, 2);
+    WaypointData.print(" / Distance: ");
+    WaypointData.print(currentWaypointIndex, 2);
+    WaypointData.print(" / Heading: ");
+    WaypointData.println(theta, 2);
+    WaypointData.close();  // Always close the file after writing
+  } 
+  else {
+    Serial.println("Error: Unable to open SD file.");
+  }
+
+
+   unsigned long currentMillis = millis();
+  if (currentMillis - previousMillis >= interval) {
+    previousMillis = currentMillis;
+
+    // Update position from encoders and navigate to waypoint
+    updatePositionFromEncoders();
+    navigateToClosestWaypoint();
+  }
 }
