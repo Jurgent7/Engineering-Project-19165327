@@ -1,8 +1,6 @@
-#include <Wire.h>
-
-// Pins
-#define MOTOR_PIN 9       // Motor digital pin
-#define ENCODER_PIN 2      // Encoder pin
+#include <Wire.h> //I2c bus communication library 
+#define MOTOR_PIN 9    // Motor digital pin 9
+#define ENCODER_PIN 2  // Encoder pin 2
 
 // Encoder variables
 volatile int encoderTicks = 0;
@@ -16,16 +14,11 @@ void setup() {
   Wire.begin(8); // Address 8 for Nano
   Wire.onReceive(receiveCommand); // Register receive handler
   Wire.onRequest(sendEncoderData); // Register request handler
-
-  // Motor control pin setup
-  pinMode(MOTOR_PIN, OUTPUT);
-
-  // Encoder pin setup
-  pinMode(ENCODER_PIN, INPUT_PULLUP);
+  
+  pinMode(MOTOR_PIN, OUTPUT); // Motor control pin setup
+  pinMode(ENCODER_PIN, INPUT_PULLUP);  // Encoder pin setup
   attachInterrupt(digitalPinToInterrupt(ENCODER_PIN), encoderISR, RISING);
-
-  // Debug message
-  Serial.println("Nano initialized and ready.");
+  Serial.println("Nano initialized and ready."); //serial monitor to help with deugging
 }
 
 void loop() {
@@ -58,5 +51,4 @@ void sendEncoderData() {
 void encoderISR() {
   encoderTicks++; // Increment encoder tick count
 }
-
 
