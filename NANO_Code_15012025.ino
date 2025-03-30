@@ -1,54 +1,47 @@
-#include <Wire.h> //I2c bus communication library 
-#define MOTOR_PIN 9    // Motor digital pin 9
-#define ENCODER_PIN 2  // Encoder pin 2
+#include <Wire.h> //I2C library bus communication with Mega
+#define Motor_pin 9 //define dc motor pin =9
+#define Encoder_pin 2 //define encoder pin =2
+// Encoder value changes rapifly, hence a volatile function must be implemented
+volatile unsigned int encoderTicks = 0;  //0-65535 range or 2^16-1
+int motor_speed = 0; //Motor speed value index
 
-// Encoder variables
-volatile int encoderTicks = 0;
-int motorSpeed = 0; // Motor speed received from the Mega
+void setup() { //Set up the variables.....................................  
+  Serial.begin(115200); //Serial Monitor for debugging
+  pinMode(Motor_pin, OUTPUT); //Set motor pin as output
+  pinMode(Encoder_pin, INPUT_PULLUP); //Set up encoder sesor
+  // Encoder interrupt setup..............................................
+  attachInterrupt(digitalPinToInterrupt(Encoder_pin), encoderISR, RISING);
+  Wire.begin(8); // I2C setup as slave at address 8        
+  Wire.onReceive(receiveCommand); //Receive command from Mega
+  Wire.onRequest(send_encoder_data); //Send encoder data to Mega
+  Serial.println("Nano ready"); //Print 'Nano ready' 
+}
 
-void setup() {
-  // Initialize Serial Monitor
-  Serial.begin(9600);
-
-  // Initialize I2C communication as Slave
-  Wire.begin(8); // Address 8 for Nano
-  Wire.onReceive(receiveCommand); // Register receive handler
-  Wire.onRequest(sendEncoderData); // Register request handler
+void loop() { // This piece of code will run continiously..........................
+  analogWrite(Motor_pin, motor_speed); //Write the speed of the motor based on PWM received
+  delay(10); // Reduced delay for better responsiveness
+}
+// Optimised ISR, no floating points
+void encoderISR() { //the program will allways read the encoders last value
+  encoderTicks++;  // Will finish at 65535 as set on the volatile int
   
-  pinMode(MOTOR_PIN, OUTPUT); // Motor control pin setup
-  pinMode(ENCODER_PIN, INPUT_PULLUP);  // Encoder pin setup
-  attachInterrupt(digitalPinToInterrupt(ENCODER_PIN), encoderISR, RISING);
-  Serial.println("Nano initialized and ready."); //serial monitor to help with deugging
 }
-
-void loop() {
-  // Drive the motor with the received speed
-  analogWrite(MOTOR_PIN, motorSpeed); // Control motor speed based on Mega's command
-  delay(50); // Small delay to stabilize motor
-}
-
-// ----------------- I2C Communication -----------------
+// Motor command handler...................................................
 void receiveCommand(int numBytes) {
-  // Receive motor speed from the Mega
-  if (Wire.available()) {
-    motorSpeed = Wire.read(); // Read the speed value
-    Serial.print("Received motor speed: ");
-    Serial.println(motorSpeed); // Debug: Print received motor speed
+  if(Wire.available()) { //if a byte is sent by mega then:
+    motor_speed = Wire.read(); //read motor speed sent by Mega
+    motor_speed = constrain(motor_speed, 0, 255); //speed constrain
+    Serial.print("Speed: "); //print 'Speed' on the Serial Monitor
+    Serial.println(motor_speed); //print the value 
   }
 }
-
-void sendEncoderData() {
-  // Send encoder tick count to Mega
-  Wire.write(lowByte(encoderTicks));
-  Wire.write(highByte(encoderTicks));
-
-  // Debug message
-  Serial.print("Sent Encoder Data -> Ticks: ");
-  Serial.println(encoderTicks); // Debug: Print sent encoder data
-}
-
-// ----------------- Encoder Interrupt -----------------
-void encoderISR() {
-  encoderTicks++; // Increment encoder tick count
+// Encoder send the data, 16-bit split into 2 times 8 bytes
+void send_encoder_data() {
+  Wire.write(lowByte(encoderTicks));// Send LSB first 
+  Wire.write(highByte(encoderTicks)); //Send MSB second
+  static unsigned int lastSent; //Comands for debugging
+  Serial.print("Delta Ticks:"); //Print this text
+  Serial.println(encoderTicks - lastSent); //Print the change in the encoder ticks
+  lastSent = encoderTicks;
 }
 
