@@ -26,7 +26,7 @@ float car_angle = 0; // angle theta is equal to 0,
 int currentWaypoint = 0; // start from 0, waypoints from 0 to 84 
 float speed = 0.5; //car speed
 float scaleFactor; //screen visualisation scale
-float xOffset, yOffset; //circuit is placed in the centre of the circuit.
+float x_offset, y_offset; //circuit is placed in the centre of the circuit.
 
 void setup() {
   size(1000, 1000); //screen size 
@@ -36,7 +36,7 @@ void setup() {
 
 void draw() {
   background(255); //background color 
-  translate(xOffset, yOffset); // x and y offest values 
+  translate(x_offset, y_offset); // x and y offest values 
   scale(scaleFactor); // Window scale factor 
   plotWaypoints(); // waypoins 
   drawPath(); // path between waypoints 
@@ -52,17 +52,17 @@ void calculateBoundsAndScale() {
 
 //find min and max x and y values is important when calculating consecutive waypoint values
   for (int i = 0; i < waypoints.length; i++) {
-    if (waypoints[i][0] < minX) minX = waypoints[i][0]; //  min x values
+    if (waypoints[i][0] < minX) minX = waypoints[i][0]; //   min x values
     if (waypoints[i][1] < minY) minY = waypoints[i][1]; // min y value
     if (waypoints[i][0] > maxX) maxX = waypoints[i][0]; //max x value
     if (waypoints[i][1] > maxY) maxY = waypoints[i][1]; //max y value
   }
 
-  float circuitWidth = maxX - minX;
-  float circuitHeight = maxY - minY;
-  scaleFactor = 0.8 * min(width / circuitWidth, height / circuitHeight); // Leave padding
-  xOffset = width / 2 - (minX + maxX) / 2 * scaleFactor;
-  yOffset = height / 2 - (minY + maxY) / 2 * scaleFactor;
+  float circuit_width = maxX - minX;  // the width of the circuit 
+  float circuit_height = maxY - minY; // the height
+  scaleFactor = 0.8 * min(width / circuit_width, height / circuit_height); // Leave padding
+  x_offset = width / 2 - (minX + maxX) / 2 * scaleFactor;
+  y_offset = height / 2 - (minY + maxY) / 2 * scaleFactor;
 }
 
 void plotWaypoints() {  //waypoint features such as filling 
@@ -108,8 +108,8 @@ void moveToWaypoint() { //move towards the waypoint
 
   car_angle += 0.1 * angleDiff;
   if (abs(angleDiff) < 0.1) {
-    car_x += cos(car_angle) * speed;  //delta x position Equation 4a 
-    car_y += sin(car_angle) * speed;  //delta y position Equation 4b
+    car_x += cos(car_angle) * speed;  //delta x position Equation 4a on the report 
+    car_y += sin(car_angle) * speed;  //delta y position Equation 4b on the report 
   }
 
   if (distance < 3) {
