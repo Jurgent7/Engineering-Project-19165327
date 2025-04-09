@@ -1,4 +1,4 @@
-//19165327_Jurgent_Gjeloshaj
+//19165327_Jurgent_Gjeloshaj Processing Code 
 //define all waypoints the car needs to follow
 float[][] waypoints = {
   {8.42, 5.63}, {9.25, 6.76}, {10.00, 7.93}, {10.16, 9.27}, {9.59, 10.58},  
@@ -20,9 +20,9 @@ float[][] waypoints = {
   {5.15, 1.13}, {5.98, 2.26}, {6.78, 3.41}, {7.61, 4.54}
 };
 
-float carX = 8.42;  //car x start position, this value correlates to first waypoint 
-float carY = 5.63; //car y start position 
-float carAngle = 0; // angle theta is equal to 0, 
+float car_x = 8.42;  //car x start position, this value correlates to first waypoint 
+float car_y = 5.63; //car y start position 
+float car_angle = 0; // angle theta is equal to 0, 
 int currentWaypoint = 0; // start from 0, waypoints from 0 to 84 
 float speed = 0.5; //car speed
 float scaleFactor; //screen visualisation scale
@@ -41,7 +41,7 @@ void draw() {
   plotWaypoints(); // waypoins 
   drawPath(); // path between waypoints 
   moveToWaypoint(); // move to waypoint varuable
-  drawCar(carX, carY, carAngle); // set x, y and angle variables
+  drawCar(car_x, car_y, car_angle); // set x, y and angle variables
 }
 
 void calculateBoundsAndScale() {
@@ -60,31 +60,29 @@ void calculateBoundsAndScale() {
 
   float circuitWidth = maxX - minX;
   float circuitHeight = maxY - minY;
-
   scaleFactor = 0.8 * min(width / circuitWidth, height / circuitHeight); // Leave padding
   xOffset = width / 2 - (minX + maxX) / 2 * scaleFactor;
   yOffset = height / 2 - (minY + maxY) / 2 * scaleFactor;
 }
 
-void plotWaypoints() {  //waypoint features
+void plotWaypoints() {  //waypoint features such as filling 
   fill(0);
   stroke(0);
   for (int i = 0; i < waypoints.length; i++) {
-    ellipse(waypoints[i][0], waypoints[i][1], 1, 1);
+    ellipse(waypoints[i][0], waypoints[i][1], 1, 1); 
   }
 }
 
 void drawPath() {     //path from one waypoint to the other
-  strokeWeight(0.2);
+  strokeWeight(0.2); //path physical features 
   stroke(150);
-  for (int i = 0; i < waypoints.length - 1; i++) {
+  for (int i = 0; i < waypoints.length - 1; i++) { //this waypoint index will tell what waypoint numnber is being looked at
     line(waypoints[i][0], waypoints[i][1],
          waypoints[i + 1][0], waypoints[i + 1][1]);
   }
 }
 
-float carR = 0, carG = 255, carB = 0;  //set colors , read green and blue
-
+float carR = 0, carG = 255, carB = 0;  //set colors to, read green and blue
 void drawCar(float x, float y, float angle) { //car will move through waypoints
   pushMatrix(); //save the cars state at the moment
   translate(x, y); //cars origine will move to match the new coordinates continuesly
@@ -94,30 +92,31 @@ void drawCar(float x, float y, float angle) { //car will move through waypoints
   popMatrix();
 }
 
-void moveToWaypoint() {
+void moveToWaypoint() { //move towards the waypoint
   if (currentWaypoint >= waypoints.length) {
-    speed = 0;
+    speed = 0; //
     return;
   }
 
-  float targetX = waypoints[currentWaypoint][0]; // waypoint target x
-  float targetY = waypoints[currentWaypoint][1]; // waypoint target y 
-
-  float angleToTarget = atan2(targetY - carY, targetX - carX); //using Equation 2 to calculate angle theta
-  float distance = dist(carX, carY, targetX, targetY); //distance to target using Equation  1
-  float angleDiff = angleToTarget - carAngle; //Angle difference using Equation 3 
-
+  float target_x = waypoints[currentWaypoint][0]; // waypoint target x
+  float target_y = waypoints[currentWaypoint][1]; // waypoint target y 
+  float angleToTarget = atan2(target_y - car_y, target_x - car_x); //using Equation 2 to calculate angle theta
+  float distance = dist(car_x, car_y, target_x, target_y); //distance to target using Equation  1
+  float angleDiff = angleToTarget - car_angle; //Angle difference using Equation 3 
   while (angleDiff > PI) angleDiff -= TWO_PI;  //steering constrains between pi and -pi
   while (angleDiff < -PI) angleDiff += TWO_PI; //steering constrains between pi and -pi
 
-  carAngle += 0.1 * angleDiff;
-
+  car_angle += 0.1 * angleDiff;
   if (abs(angleDiff) < 0.1) {
-    carX += cos(carAngle) * speed;  //delta x position Equation 4a 
-    carY += sin(carAngle) * speed;  //delta y position Equation 4b
+    car_x += cos(car_angle) * speed;  //delta x position Equation 4a 
+    car_y += sin(car_angle) * speed;  //delta y position Equation 4b
   }
 
   if (distance < 3) {
     currentWaypoint++;
   }
 }
+
+//Some refernece links for this code
+//https://docs.oracle.com/javase/tutorial/2d/geometry/strokeandfill.html#:~:text=Filling%20%E2%80%93%20is%20a%20process%20of,line%20style%2C%20and%20color%20attribute
+//https://processing.org/
